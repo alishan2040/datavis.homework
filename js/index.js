@@ -76,37 +76,79 @@ loadData().then(data => {
         updateBar();
     });
 
-    function updateBar(){
-        return;
+    function toFloat(value){
+
+        return parseFloat(value)
     }
 
-    function updateScattePlot(){
-        return;
+
+    function updateBar() {
+        // which key to use
+        var reg = 'region'
+        var average = d3.nest().key(data => data[reg])
+            .rollup(val => d3.mean(val, data => 
+            toFloat(data[param][year]) || 0)).entries(data);
+        var xVal = xBar.domain(regionArray);
+        var yVal = yBar.domain([0, d3.max(average.map(data => data.value))]);
+        xBarAxis.call(d3.axisBottom(xVal));
+        yBarAxis.call(d3.axisLeft(yVal));
+        barHelper(barChart.selectAll(".bar")
+            .data(average).enter().append("rect").on('click', onClickAction), xVal, yVal);
+        barHelper(barChart.selectAll(".bar")
+            .data(average).transition(), xVal, yVal);
     }
+
+    function updateScatterPlot() {
+        // we will update scatter plot
+        // according to parameters
+    
+        var xVal = x.domain(d3.extent(
+            data.map(data => toFloat(data[xParam][year]) || 0)));
+        var yVal = y.domain(d3.extent(
+            data.map(data => toFloat(data[yParam][year]) || 0)));
+        var rVal = radiusScale.domain(
+            d3.extent(data.map(data => toFloat(data[rParam][year]) || 0)));
+        xAxis.call(d3.axisBottom(xVal));
+        yAxis.call(d3.axisLeft(yVal));
+    
+        refScatter(scatterPlot.selectAll('circle')
+        .data(data)
+            .enter().append('circle').on('click', onScatterClick), xVal, yVal, rVal);
+        refScatter(scatterPlot.selectAll('circle')
+        .data(data).transition(), xVal, yVal, rVal);
+    }
+
+    function onClickAction(cData, i) {
+        // First check
+        // if clicked data is undefined OR
+        // equals to highlighted
+        // This method is used by UpdateBar PLot
+        if (typeof cData === "undefined" || highlighted === cData.key){
+            // Update highlighted first
+            highlighted = '';
+            // bar chart
+            barChart.selectAll('.bar').transition().style('opacity', 1.1);
+            //scatter plot
+            scatterPlot.selectAll('circle').transition().style('opacity', 0.75);
+            
+        }
+        else{
+            highlighted = cData.key;
+            barChart.selectAll('.bar').transition()
+                .style('opacity', data => data.key === highlighted ? 1.5 : 0.5);
+
+            scatterPlot.selectAll('circle').transition()
+                .style('opacity', data => data.region === highlighted ? 0.6 : 0);
+        }
+        d3.event.stopPropagation();
+    }
+
 
     updateBar();
     updateScattePlot();
 });
 
-function updateScatterPlot() {
-    // we will update scatter plot
-    // according to parameters
 
-    var xVal = x.domain(d3.extent(
-        data.map(data => toFloat(data[xParam][year]) || 0)));
-    var yVal = y.domain(d3.extent(
-        data.map(data => toFloat(data[yParam][year]) || 0)));
-    var rVal = radiusScale.domain(
-        d3.extent(data.map(data => toFloat(data[rParam][year]) || 0)));
-    xAxis.call(d3.axisBottom(xVal));
-    yAxis.call(d3.axisLeft(yVal));
-
-    refScatter(scatterPlot.selectAll('circle')
-    .data(data)
-        .enter().append('circle').on('click', onScatterClick), xVal, yVal, rVal);
-    refScatter(scatterPlot.selectAll('circle')
-    .data(data).transition(), xVal, yVal, rVal);
-}
 
 async function loadData() {
     const data = { 
