@@ -88,6 +88,25 @@ loadData().then(data => {
     updateScattePlot();
 });
 
+function updateScatterPlot() {
+    // we will update scatter plot
+    // according to parameters
+
+    var xVal = x.domain(d3.extent(
+        data.map(data => toFloat(data[xParam][year]) || 0)));
+    var yVal = y.domain(d3.extent(
+        data.map(data => toFloat(data[yParam][year]) || 0)));
+    var rVal = radiusScale.domain(
+        d3.extent(data.map(data => toFloat(data[rParam][year]) || 0)));
+    xAxis.call(d3.axisBottom(xVal));
+    yAxis.call(d3.axisLeft(yVal));
+
+    refScatter(scatterPlot.selectAll('circle')
+    .data(data)
+        .enter().append('circle').on('click', onScatterClick), xVal, yVal, rVal);
+    refScatter(scatterPlot.selectAll('circle')
+    .data(data).transition(), xVal, yVal, rVal);
+}
 
 async function loadData() {
     const data = { 
